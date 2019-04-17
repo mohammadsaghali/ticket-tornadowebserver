@@ -28,6 +28,15 @@ def clear():
     else:
         os.system('clear')
 
+def show_func():
+    print("USERNAME : "+USERNAME+"\n"+"API : " + API)
+    print("""What Do You Prefer To Do :
+    1. Balance
+    2. Deposit
+    3. Withdraw
+    4. Logout
+    5. Exit
+    """)
 
 while True:
     clear()
@@ -48,6 +57,48 @@ while True:
             2. USERNAME | PASSWORD
             """)
         login_type = sys.stdin.readline()
+        #login with API
+        if login_type[:-1] == '1':
+            clear()
+            while True:
+                print("API : ")
+                API = sys.stdin.readline()[:-1]
+                CMD = "apicheck"
+                PARAMS = {'api':API}
+                r=requests.post(__postcr__(),params=PARAMS)
+                if str(r.json()['status']) == 'TRUE':
+                    clear()
+                    print("API IS CORRECT\nLogging You in ...")
+                    USERNAME = str(r.json()['username'])
+                    time.sleep(2)
+                    break
+                else:
+                    clear()
+                    print("API IS INCORRECT\nTRY AGAIN ...")
+                    time.sleep(2)
+
+        elif login_type[:-1] == '2':
+            clear()
+            while True:
+                print("USERNAME : ")
+                USERNAME = sys.stdin.readline()[:-1]
+                print("PASSWORD : ")
+                PASSWORD = sys.stdin.readline()[:-1]
+                CMD = "authcheck"
+                PARAMS = {'username':USERNAME,'password':PASSWORD}
+                r = requests.post(__postcr__(),PARAMS)
+                if str(r.json()['status']) == 'TRUE':
+                    clear()
+                    print("USERNAME AND PASSWORD IS CORRECT\nLogging You in ...")
+                    API = str(r.json()['api'])
+                    print(API)
+                    time.sleep(2)
+                    break
+                else:
+                    clear()
+                    print("USERNAME AND PASSWORD IS INCORRECT\nTRY AGAIN ...")
+                    time.sleep(2)
+
 
 
         # signup
@@ -80,7 +131,7 @@ while True:
             PARAMS = {'username': USERNAME, 'password': PASSWORD, 'role': ROLE, 'firstname': FIRSTNAME, 'lastname': LASTNAME}
             r = requests.post(__postcr__(), PARAMS)
             if str(r.json()['status']) == "OK":
-                print("Your Acount Is Created\n" + "Your Username :" + USERNAME + "\nYour API : " + str(r.json()['apitoken']))
+                print("Your Acount Is Created\n" + "Your Username :" + USERNAME + "\nYour API : " + str(r.json()['api']))
 
                 print('Press Any Key To Continue ...')
                 x = sys.stdin.readline()[:-1]

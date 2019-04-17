@@ -21,6 +21,8 @@ class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
             (r"/signup", signup),
+            (r"/apicheck", apicheck),
+            (r"/authcheck", authcheck),
             (r".*", defaulthandler),
         ]
         settings = dict()
@@ -39,6 +41,18 @@ class BaseHandler(tornado.web.RequestHandler):
         if resuser:
             return True
         else :
+            return False
+    def check_api(self,api):
+        resuser = self.db.get("SELECT * from users where apitoken = %s", api)
+        if resuser:
+            return True
+        else:
+            return False
+    def check_auth(self,username,password):
+        resuser = self.db.get("SELECT * from users where username = %s and password = %s", username,password)
+        if resuser:
+            return True
+        else:
             return False
 
 
@@ -61,6 +75,33 @@ class signup(BaseHandler):
         else :
             output = {'status': 'User Exist'}
             self.write(output)
+
+class apicheck(BaseHandler):
+    def post(self, *args, **kwargs):
+        api = self.get_argument('api')
+        if self.check_api(api):
+            user = self.db.get("SELECT * from users where apitoken = %s", api)
+            output = {'status': 'TRUE',
+                      'api': user.apitoken,
+                      'username': user.username}
+            self.write(output)
+        else:
+            output = {'status': 'FALSE'}
+            self.write(output)
+class authcheck(BaseHandler):
+    def post(self, *args, **kwargs):
+        username = self.get_argument('username')
+        password = self.get_argument('password')
+        if self.check_auth(username,password):
+            user = self.db.get("SELECT * from users where username = %s and password = %s", username, password)
+            output = {'status': 'TRUE',
+                      'api': user.apitoken,
+                      'username': user.username}
+            self.write(output)
+        else:
+            output = {'status': 'FALSE'}
+            self.write(output)
+
 
 
 class defaulthandler(BaseHandler):
