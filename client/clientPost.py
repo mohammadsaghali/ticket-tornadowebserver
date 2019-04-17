@@ -13,15 +13,6 @@ PORT = "1104"
 def __postcr__():
     return "http://"+HOST+":"+PORT+"/"+CMD+"?"
 
-
-def print_bal(r):
-    print("YOUR BALANCE IS : " + str(r['Balance']))
-
-
-def print_depwith(r):
-    print("YOUR OLD BALANCE IS : " + str(r['Old Balance'])
-          +"\n"+"YOUR NEW BALANCE IS : "+str(r['New Balance']))
-
 def clear():
     if platform.system() == 'Windows':
         os.system('cls')
@@ -31,19 +22,18 @@ def clear():
 def show_func():
     print("USERNAME : "+USERNAME+"\n"+"API : " + API)
     print("""What Do You Prefer To Do :
-    1. Balance
-    2. Deposit
-    3. Withdraw
-    4. Logout
-    5. Exit
+    1. send ticket
+    2. get ticeket
     """)
 
+
+#start project
 while True:
     clear()
     print("""WELCOME TO Ticketing to users
     Please Choose What You Want To Do :
-    1. signin
-    2. signup
+    1. sign in
+    2. sign up
     3. exit
     """)
     status = sys.stdin.readline()
@@ -57,15 +47,17 @@ while True:
             2. USERNAME | PASSWORD
             """)
         login_type = sys.stdin.readline()
+
         #login with API
         if login_type[:-1] == '1':
             clear()
+
             while True:
                 print("API : ")
                 API = sys.stdin.readline()[:-1]
                 CMD = "apicheck"
                 PARAMS = {'api':API}
-                r=requests.post(__postcr__(),params=PARAMS)
+                r = requests.post(__postcr__(), params=PARAMS)
                 if str(r.json()['status']) == 'TRUE':
                     clear()
                     print("API IS CORRECT\nLogging You in ...")
@@ -77,6 +69,29 @@ while True:
                     print("API IS INCORRECT\nTRY AGAIN ...")
                     time.sleep(2)
 
+            while True:
+                clear()
+                show_func()
+                func_type = sys.stdin.readline()
+                if func_type[:-1] == '1':
+                    clear()
+                    print("subject : ")
+                    subject = sys.stdin.readline()[:-1]
+                    print("body : ")
+                    body = sys.stdin.readline()[:-1]
+                    CMD = "sendTicket"
+                    PARAMS = {'apiToken': API, 'subject': subject, 'body': body}
+                    data = requests.post(__postcr__(), PARAMS)
+
+                    if str(data.json()['status']) == "OK":
+                        print("message ID : " + str(data.json()['id']) )
+                        print(str(data.json()['message']))
+
+                    print('Press Any Key To Continue ...')
+                    x = sys.stdin.readline()[:-1]
+
+
+        #login with user & pass
         elif login_type[:-1] == '2':
             clear()
             while True:
@@ -85,13 +100,12 @@ while True:
                 print("PASSWORD : ")
                 PASSWORD = sys.stdin.readline()[:-1]
                 CMD = "authcheck"
-                PARAMS = {'username':USERNAME,'password':PASSWORD}
-                r = requests.post(__postcr__(),PARAMS)
+                PARAMS = {'username': USERNAME, 'password': PASSWORD}
+                r = requests.post(__postcr__(), PARAMS)
                 if str(r.json()['status']) == 'TRUE':
                     clear()
                     print("USERNAME AND PASSWORD IS CORRECT\nLogging You in ...")
                     API = str(r.json()['api'])
-                    print(API)
                     time.sleep(2)
                     break
                 else:
@@ -99,6 +113,26 @@ while True:
                     print("USERNAME AND PASSWORD IS INCORRECT\nTRY AGAIN ...")
                     time.sleep(2)
 
+            while True:
+                clear()
+                show_func()
+                func_type = sys.stdin.readline()
+                if func_type[:-1] == '1':
+                    clear()
+                    print("subject : ")
+                    subject = sys.stdin.readline()[:-1]
+                    print("body : ")
+                    body = sys.stdin.readline()[:-1]
+                    CMD = "sendTicket"
+                    PARAMS = {'apiToken': API, 'subject': subject, 'body': body }
+                    data = requests.post(__postcr__(), PARAMS)
+
+                    if str(data.json()['status']) == "OK":
+                        print("message ID : " + str(data.json()['id']) )
+                        print(str(data.json()['message']))
+
+                    print('Press Any Key To Continue ...')
+                    x = sys.stdin.readline()[:-1]
 
 
         # signup
@@ -115,6 +149,7 @@ while True:
             FIRSTNAME = sys.stdin.readline()[:-1]
             print("LASTNAME : ")
             LASTNAME = sys.stdin.readline()[:-1]
+
             while True:
                 print("ROLE : "+ "\n1.admin\n2.user")
                 temp = sys.stdin.readline()[:-1]
@@ -126,6 +161,7 @@ while True:
                     break
                 else:
                     print("choose correct number")
+
             CMD = "signup"
             clear()
             PARAMS = {'username': USERNAME, 'password': PASSWORD, 'role': ROLE, 'firstname': FIRSTNAME, 'lastname': LASTNAME}

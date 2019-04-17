@@ -8,7 +8,7 @@ import os
 from binascii import hexlify
 import tornado.web
 from tornado.options import define, options
-
+import time
 
 define("port", default=1104, help="run on the given port", type=int)
 define("mysql_host", default="127.0.0.1:3306", help="database host")
@@ -23,6 +23,8 @@ class Application(tornado.web.Application):
             (r"/signup", signup),
             (r"/apicheck", apicheck),
             (r"/authcheck", authcheck),
+            (r"/logout",logout),
+            (r"/sendTicket",sendTicket),
             (r".*", defaulthandler),
         ]
         settings = dict()
@@ -42,19 +44,25 @@ class BaseHandler(tornado.web.RequestHandler):
             return True
         else :
             return False
+
     def check_api(self,api):
         resuser = self.db.get("SELECT * from users where apitoken = %s", api)
         if resuser:
             return True
         else:
             return False
+
     def check_auth(self,username,password):
-        resuser = self.db.get("SELECT * from users where username = %s and password = %s", username,password)
+        resuser = self.db.get("SELECT * from users where username = %s and password = %s", username, password)
         if resuser:
             return True
         else:
             return False
 
+class defaulthandler(BaseHandler):
+    def get(self):
+        user = self.db.get("SELECT * from users where username = 'mohammadsgh'")
+        self.write(user)
 
 
 class signup(BaseHandler):
@@ -88,6 +96,8 @@ class apicheck(BaseHandler):
         else:
             output = {'status': 'FALSE'}
             self.write(output)
+
+
 class authcheck(BaseHandler):
     def post(self, *args, **kwargs):
         username = self.get_argument('username')
@@ -103,11 +113,26 @@ class authcheck(BaseHandler):
             self.write(output)
 
 
+class logout(BaseHandler):
+    def post(self):
+        username = self.get_argument('username')
+        password = self.get_argument('password')
 
-class defaulthandler(BaseHandler):
-    def get(self):
-        user = self.db.get("SELECT * from users where username = 'mohammadsgh'")
-        self.write(user)
+
+class sendTicket(BaseHandler):
+    def post(self):
+        apiToken = self.get_argument('apiToken')
+        subject = self.get_argument('subject')
+        body = self.get_argument('body')
+
+        user = self.db.get("SELECT id FROM users WHERE apitoken = %s", apiToken)
+
+        self.db.execute("INSERT INTO ticket (userId, subject, body, response, status, date)"
+                            "VALUES (%s,%s,%s,%s,'open', %s)", int(user.id), subject, body, None,
+                            time.strftime('%Y-%m-%d %H:%M:%S'))
+        ticket_id = self.db.execute("SELECT LAST_INSERT_ID()")
+        message = {'message': 'Ticket Sent Successfully!', 'id': ticket_id,'status': 'OK'}
+        self.write(message)
 
 def main():
     http_server = tornado.httpserver.HTTPServer(Application())
