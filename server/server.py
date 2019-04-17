@@ -34,22 +34,34 @@ class BaseHandler(tornado.web.RequestHandler):
     @property
     def db(self):
         return self.application.db
+    def check_user(self,user):
+        resuser = self.db.get("SELECT * from users where username = %s",user)
+        if resuser:
+            return True
+        else :
+            return False
+
 
 
 class signup(BaseHandler):
     def post(self, *args, **kwargs):
         username = self.get_argument('username')
         password = self.get_argument('password')
-        rool = self.get_argument('rool')
-        api_token = str(hexlify(os.urandom(16)))
-        user_id = self.db.execute("INSERT INTO users (username, password, rool,apitoken) "
-                                 "values (%s,%s,%s,%s) "
-                                 , username,password, rool,api_token)
+        role = self.get_argument('role')
+        firstname = self.get_argument('firstname')
+        lastname = self.get_argument('lastname')
+        if not self.check_user(username):
+            api_token = str(hexlify(os.urandom(16)))
+            user_id = self.db.execute("INSERT INTO users (username, password, role, apitoken, firstname, lastname) "
+                                     "values (%s,%s,%s,%s,%s,%s) "
+                                     , username,password, role, api_token, firstname, lastname)
+            output = {'apitoken' : api_token,
+                      'status': 'OK'}
+            self.write(output)
+        else :
+            output = {'status': 'User Exist'}
+            self.write(output)
 
-        output = {'username' : username,
-                  'status': 'OK'}
-
-        self.write(output)
 
 class defaulthandler(BaseHandler):
     def get(self):

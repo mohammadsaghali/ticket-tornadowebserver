@@ -989,7 +989,7 @@
       <DataType>text|0s</DataType>
       <ColumnKind>normal</ColumnKind>
     </column>
-    <column id="243" parent="228" name="rool">
+    <column id="243" parent="228" name="role">
       <Position>7</Position>
       <DataType>text|0s</DataType>
       <NotNull>1</NotNull>
