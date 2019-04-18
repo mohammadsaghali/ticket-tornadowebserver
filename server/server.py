@@ -24,7 +24,8 @@ class Application(tornado.web.Application):
             (r"/apicheck", apicheck),
             (r"/authcheck", authcheck),
             (r"/logout",logout),
-            (r"/sendTicket",sendTicket),
+            (r"/sendTicket", sendTicket),
+            (r"/getTicket",getTicket ),
             (r".*", defaulthandler),
         ]
         settings = dict()
@@ -131,8 +132,52 @@ class sendTicket(BaseHandler):
                             "VALUES (%s,%s,%s,%s,'open', %s)", int(user.id), subject, body, None,
                             time.strftime('%Y-%m-%d %H:%M:%S'))
         ticket_id = self.db.execute("SELECT LAST_INSERT_ID()")
-        message = {'message': 'Ticket Sent Successfully!', 'id': ticket_id,'status': 'OK'}
-        self.write(message)
+        output = {'message': 'Ticket Sent Successfully!', 'id': ticket_id,'status': 'OK'}
+        self.write(output)
+
+
+class getTicket(BaseHandler):
+
+    def post(self, *args, **kwargs):
+        apiToken = self.get_argument('apiToken')
+        user = self.db.get("SELECT * from users where apitoken = %s",apiToken)
+
+        #if normal user want to see tickets
+        if user.role == "user":
+            tickets = self.db.query("SElECT * from ticket where userId = %s", user.id)
+
+            if(len(tickets) != 0):
+                output = {'tickets': 'Ther are ' + str(len(tickets)) + ' Tickets', 'status': 'OK'}
+                for i in range(0, len(tickets)):
+                    info = {'subject': tickets[i].subject, 'body': tickets[i].body,
+                            'type': tickets[i].status, 'response': tickets[i].response,
+                            'id': tickets[i].id}
+                    output['block ' + str(i)] = info
+                output['index'] = str(len(tickets))
+                self.write(output)
+            #if have 0 ticket we dont have block in out put
+            else:
+                output = {'tickets': 'Ther are ' + str(len(tickets)) + ' Tickets', 'status': 'FAILD'}
+                self.write(output)
+
+        #if admin want to see tickets
+        elif user.role == "admin":
+            tickets = self.db.query("SELECT * from ticket")
+            output = {'tickets': 'There are ' + str(len(tickets)) + ' tickets', 'status': 'OK'}
+
+            if len(tickets) != 0:
+                for i in range(0, len(tickets)):
+                    info = {'subject': tickets[i].subject, 'body': tickets[i].body,
+                            'type': tickets[i].status, 'response': tickets[i].response,
+                            'id': tickets[i].id}
+                    output['block ' + str(i)] = info
+                output['index'] = str(len(tickets))
+                self.write(output)
+            #if have 0 ticket we dont have block in out put
+            else:
+                output = {'tickets': 'Ther are ' + str(len(tickets)) + ' Tickets', 'status': 'FAILD'}
+                self.write(output)
+
 
 def main():
     http_server = tornado.httpserver.HTTPServer(Application())

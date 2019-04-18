@@ -69,10 +69,13 @@ while True:
                     print("API IS INCORRECT\nTRY AGAIN ...")
                     time.sleep(2)
 
+            # functions
             while True:
                 clear()
                 show_func()
                 func_type = sys.stdin.readline()
+
+                # sendticket
                 if func_type[:-1] == '1':
                     clear()
                     print("subject : ")
@@ -81,14 +84,36 @@ while True:
                     body = sys.stdin.readline()[:-1]
                     CMD = "sendTicket"
                     PARAMS = {'apiToken': API, 'subject': subject, 'body': body}
-                    data = requests.post(__postcr__(), PARAMS)
+                    r = requests.post(__postcr__(), PARAMS)
 
-                    if str(data.json()['status']) == "OK":
-                        print("message ID : " + str(data.json()['id']) )
-                        print(str(data.json()['message']))
+                    if str(r.json()['status']) == "OK":
+                        print("message ID : " + str(r.json()['id']))
+                        print(str(r.json()['message']))
 
                     print('Press Any Key To Continue ...')
                     x = sys.stdin.readline()[:-1]
+
+                # get ticket
+                if func_type[:-1] == '2':
+                    clear()
+                    CMD = "getTicket"
+                    PARAMS = {"apiToken": API}
+                    r = requests.post(__postcr__(), PARAMS)
+
+                    if str(r.json()['status']) == "OK":
+                        print(str(r.json()['tickets']))
+                        index = int(r.json()['index'])
+                        for i in range(0, index):
+                            block = 'block ' + str(i)
+                            print("message id : " + str(r.json()[block]['id']))
+                            print("status : " + str(r.json()[block]['type']))
+                            print("subject : " + str(r.json()[block]['subject']))
+                            print("message : " + str(r.json()[block]['body']))
+                            print("response : " + str(r.json()[block]['response']) + "\n")
+
+                    # if dont have message
+                    else:
+                        print(str(r.json()['tickets']))
 
 
         #login with user & pass
@@ -113,10 +138,13 @@ while True:
                     print("USERNAME AND PASSWORD IS INCORRECT\nTRY AGAIN ...")
                     time.sleep(2)
 
+            #functions
             while True:
                 clear()
                 show_func()
                 func_type = sys.stdin.readline()
+
+                #sendticket
                 if func_type[:-1] == '1':
                     clear()
                     print("subject : ")
@@ -125,15 +153,36 @@ while True:
                     body = sys.stdin.readline()[:-1]
                     CMD = "sendTicket"
                     PARAMS = {'apiToken': API, 'subject': subject, 'body': body }
-                    data = requests.post(__postcr__(), PARAMS)
+                    r = requests.post(__postcr__(), PARAMS)
 
-                    if str(data.json()['status']) == "OK":
-                        print("message ID : " + str(data.json()['id']) )
-                        print(str(data.json()['message']))
+                    if str(r.json()['status']) == "OK":
+                        print("message ID : " + str(r.json()['id']) )
+                        print(str(r.json()['message']))
 
                     print('Press Any Key To Continue ...')
                     x = sys.stdin.readline()[:-1]
 
+                #get ticket
+                if func_type[:-1] == '2':
+                    clear()
+                    CMD = "getTicket"
+                    PARAMS = {"apiToken": API}
+                    r = requests.post(__postcr__(), PARAMS)
+
+                    if str(r.json()['status']) == "OK":
+                        print(str(r.json()['tickets']))
+                        index = int(r.json()['index'])
+                        for i in range(0, index):
+                            block = 'block ' + str(i)
+                            print("message id : " + str(r.json()[block]['id']))
+                            print("status : "+ str(r.json()[block]['type']))
+                            print("subject : " + str(r.json()[block]['subject']))
+                            print("message : " + str(r.json()[block]['body']))
+                            print("response : " + str(r.json()[block]['response']) + "\n")
+
+                    #if dont have message
+                    else:
+                        print(str(r.json()['tickets']))
 
         # signup
     elif status[:-1] == '2':
