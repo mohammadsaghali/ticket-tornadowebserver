@@ -9,7 +9,7 @@ from binascii import hexlify
 import tornado.web
 from tornado.options import define, options
 import time
-
+import sys
 define("port", default=1104, help="run on the given port", type=int)
 define("mysql_host", default="127.0.0.1:3306", help="database host")
 define("mysql_database", default="tickets", help="database name")
@@ -23,9 +23,11 @@ class Application(tornado.web.Application):
             (r"/signup", signup),
             (r"/apicheck", apicheck),
             (r"/authcheck", authcheck),
-            (r"/logout",logout),
             (r"/sendTicket", sendTicket),
-            (r"/getTicket",getTicket ),
+            (r"/getTicket", getTicket),
+            (r"/ticketStatus",ticketStatus),
+            (r"/ticketStatusAdmin", ticketStatusAdmin),
+            (r"/response", response),
             (r".*", defaulthandler),
         ]
         settings = dict()
@@ -113,13 +115,6 @@ class authcheck(BaseHandler):
             output = {'status': 'FALSE'}
             self.write(output)
 
-
-class logout(BaseHandler):
-    def post(self):
-        username = self.get_argument('username')
-        password = self.get_argument('password')
-
-
 class sendTicket(BaseHandler):
     def post(self):
         apiToken = self.get_argument('apiToken')
@@ -157,7 +152,7 @@ class getTicket(BaseHandler):
                 self.write(output)
             #if have 0 ticket we dont have block in out put
             else:
-                output = {'tickets': 'Ther are ' + str(len(tickets)) + ' Tickets', 'status': 'FAILD'}
+                output = {'tickets': 'There are ' + str(len(tickets)) + ' Tickets', 'status': 'Failed'}
                 self.write(output)
 
         #if admin want to see tickets
@@ -175,8 +170,105 @@ class getTicket(BaseHandler):
                 self.write(output)
             #if have 0 ticket we dont have block in out put
             else:
-                output = {'tickets': 'Ther are ' + str(len(tickets)) + ' Tickets', 'status': 'FAILD'}
+                output = {'tickets': 'There are ' + str(len(tickets)) + ' Tickets', 'status': 'Failed'}
                 self.write(output)
+
+class ticketStatus(BaseHandler):
+    def post(self, *args, **kwargs):
+        apiToken = self.get_argument('apiToken')
+        id = self.get_argument('id')
+        user = self.db.get("SELECT * FROM users WHERE apitoken=%s", apiToken)
+
+        if not user:
+            output = {'message': 'token is not available',
+                   'status': 'Failed'}
+            self.write(output)
+            return
+
+        ticket = self.db.get("SELECT * from ticket WHERE id = %s", int(id))
+        if not ticket:
+            output = {'message': 'ticket id is not available',
+                      'status': 'Failed'}
+            self.write(output)
+            return
+
+        if ticket.userId != user.id:
+            output = {'message': 'permission denied', 'status': 'failed'}
+            self.write(output)
+            return
+
+        self.db.execute("UPDATE ticket SET status= 'close' where id = %s",id)
+        output ={'status': 'OK', 'message' : 'change successfully'}
+        self.write(output)
+        return
+
+class ticketStatusAdmin(BaseHandler):
+    def post(self, *args, **kwargs):
+        apiToken = self.get_argument('apiToken')
+        id = self.get_argument('id')
+        statusUSER = self.get_argument('status')
+        user = self.db.get("SELECT * FROM users WHERE apitoken = %s", apiToken)
+
+        if not user:
+            output = {'message': 'token is not available',
+                   'status': 'Failed'}
+            self.write(output)
+            return
+
+        if user.role != 'admin':
+            output = {'message': 'user is not admin, permission denied','status': 'Failed'}
+            self.write(output)
+            return
+
+        ticket = self.db.get("SELECT * from ticket WHERE id = %s", int(id))
+        if not ticket:
+            output = {'message': 'ticket id is not available',
+                      'status': 'Failed'}
+            self.write(output)
+            return
+
+        if statusUSER == "close":
+            self.db.execute("UPDATE ticket SET status = 'close'  where id = %s",id)
+        elif statusUSER == "open":
+            self.db.execute("UPDATE ticket SET status = 'open'  where id = %s",id)
+        elif statusUSER == "in progress":
+            self.db.execute("UPDATE ticket SET status = 'in progress'  where id = %s",id)
+
+        output = {'status': 'OK', 'message': 'change successfully'}
+        self.write(output)
+        return
+
+class response(BaseHandler):
+    def post(self, *args, **kwargs):
+        apiToken = self.get_argument('apiToken')
+        id = self.get_argument('id')
+        body = self.get_argument('body')
+        user = self.db.get("SELECT * FROM users WHERE apitoken = %s", apiToken)
+
+        if not user:
+            output = {'message': 'token is not available , this user not dont have token',
+                   'status': 'Failed'}
+            self.write(output)
+            return
+
+        if user.role != 'admin':
+            output = {'message': 'user is not admin, permission denied', 'status': 'Failed'}
+            self.write(output)
+            return
+
+        ticket = self.db.get("SELECT * from ticket WHERE id = %s", int(id))
+        if not ticket:
+            output = {'message': 'ticket id is not available',
+                      'status': 'Failed'}
+            self.write(output)
+            return
+
+        self.db.execute("UPDATE ticket SET response = %s  WHERE id = %s", body,  id)
+        self.db.execute("UPDATE ticket SET status = %s  WHERE id = %s", 'close', id)
+
+        output = {'message': 'Response to Ticket With id -' + str(id) + '- Sent Successfully',
+               'status': 'OK'}
+        self.write(output)
 
 
 def main():
@@ -187,3 +279,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
