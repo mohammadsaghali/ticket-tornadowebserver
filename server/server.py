@@ -41,7 +41,8 @@ class BaseHandler(tornado.web.RequestHandler):
     @property
     def db(self):
         return self.application.db
-    def check_user(self,user):
+
+    def check_user(self, user):
         resuser = self.db.get("SELECT * from users where username = %s",user)
         if resuser:
             return True
@@ -55,7 +56,7 @@ class BaseHandler(tornado.web.RequestHandler):
         else:
             return False
 
-    def check_auth(self,username,password):
+    def check_auth(self, username, password):
         resuser = self.db.get("SELECT * from users where username = %s and password = %s", username, password)
         if resuser:
             return True
@@ -75,74 +76,97 @@ class signup(BaseHandler):
         role = self.get_argument('role')
         firstname = self.get_argument('firstname')
         lastname = self.get_argument('lastname')
+
         if not self.check_user(username):
             api_token = str(hexlify(os.urandom(16)))
-            user_id = self.db.execute("INSERT INTO users (username, password, role, apitoken, firstname, lastname) "
+            self.db.execute("INSERT INTO users (username, password, role, apitoken, firstname, lastname) "
                                      "values (%s,%s,%s,%s,%s,%s) "
-                                     , username,password, role, api_token, firstname, lastname)
-            output = {'apitoken' : api_token,
-                      'status': 'OK'}
+                                     , username, password, role, api_token, firstname, lastname)
+            output = {'apitoken': api_token,
+                      'status': 'OK', 'message': 'Signup Successfully'}
             self.write(output)
-        else :
-            output = {'status': 'User Exist'}
+        else:
+            output = {'status': 'Failed', 'message': 'User Exist'}
             self.write(output)
 
+#login with API Token
 class apicheck(BaseHandler):
     def post(self, *args, **kwargs):
         api = self.get_argument('api')
+
         if self.check_api(api):
             user = self.db.get("SELECT * from users where apitoken = %s", api)
-            output = {'status': 'TRUE',
+            output = {'status': 'OK',
                       'api': user.apitoken,
                       'username': user.username}
             self.write(output)
         else:
-            output = {'status': 'FALSE'}
+            output = {'status': 'Failed'}
             self.write(output)
 
 
+#login with user & pass
 class authcheck(BaseHandler):
     def post(self, *args, **kwargs):
         username = self.get_argument('username')
         password = self.get_argument('password')
-        if self.check_auth(username,password):
+
+        if self.check_auth(username, password):
             user = self.db.get("SELECT * from users where username = %s and password = %s", username, password)
-            output = {'status': 'TRUE',
+            output = {'status': 'OK',
                       'api': user.apitoken,
                       'username': user.username}
             self.write(output)
         else:
-            output = {'status': 'FALSE'}
+            output = {'status': 'Failed'}
             self.write(output)
+            return
+
 
 class sendTicket(BaseHandler):
     def post(self):
         apiToken = self.get_argument('apiToken')
         subject = self.get_argument('subject')
         body = self.get_argument('body')
+        user = self.db.get("SELECT * FROM users WHERE apitoken = %s", apiToken)
 
-        user = self.db.get("SELECT id FROM users WHERE apitoken = %s", apiToken)
+        if not subject or not body:
+            output = {'message': 'must ne input body and subject',
+                   'status': 'Failed'}
+            self.write(output)
+            return
+
+        if not user.apitoken:
+            output = {'message': 'user token is broken or something failed',
+                   'status': 'Failed'}
+            self.write(output)
+            return
 
         self.db.execute("INSERT INTO ticket (userId, subject, body, response, status, date)"
                             "VALUES (%s,%s,%s,%s,'open', %s)", int(user.id), subject, body, None,
                             time.strftime('%Y-%m-%d %H:%M:%S'))
         ticket_id = self.db.execute("SELECT LAST_INSERT_ID()")
-        output = {'message': 'Ticket Sent Successfully!', 'id': ticket_id,'status': 'OK'}
+        output = {'message': 'Ticket Sent Successfully!', 'id': ticket_id, 'status': 'OK'}
         self.write(output)
 
 
 class getTicket(BaseHandler):
-
     def post(self, *args, **kwargs):
         apiToken = self.get_argument('apiToken')
-        user = self.db.get("SELECT * from users where apitoken = %s",apiToken)
+        user = self.db.get("SELECT * from users where apitoken = %s", apiToken)
 
-        #if normal user want to see tickets
+        if not user:
+            output = {'message': 'user token is broken or something failed',
+                   'status': 'Failed'}
+            self.write(output)
+            return
+
+        #normal user mode
         if user.role == "user":
             tickets = self.db.query("SElECT * from ticket where userId = %s", user.id)
 
-            if(len(tickets) != 0):
-                output = {'tickets': 'Ther are ' + str(len(tickets)) + ' Tickets', 'status': 'OK'}
+            if len(tickets) != 0:
+                output = {'tickets': 'There are ' + str(len(tickets)) + ' Tickets', 'status': 'OK'}
                 for i in range(0, len(tickets)):
                     info = {'subject': tickets[i].subject, 'body': tickets[i].body,
                             'type': tickets[i].status, 'response': tickets[i].response,
@@ -150,12 +174,11 @@ class getTicket(BaseHandler):
                     output['block ' + str(i)] = info
                 output['index'] = str(len(tickets))
                 self.write(output)
-            #if have 0 ticket we dont have block in out put
             else:
-                output = {'tickets': 'There are ' + str(len(tickets)) + ' Tickets', 'status': 'Failed'}
+                output = {'tickets': 'There are ' + str(len(tickets)) + ' Tickets', 'status': 'Failed', 'message': '0 ticket'}
                 self.write(output)
 
-        #if admin want to see tickets
+        #admin mode
         elif user.role == "admin":
             tickets = self.db.query("SELECT * from ticket")
             output = {'tickets': 'There are ' + str(len(tickets)) + ' tickets', 'status': 'OK'}
@@ -168,16 +191,15 @@ class getTicket(BaseHandler):
                     output['block ' + str(i)] = info
                 output['index'] = str(len(tickets))
                 self.write(output)
-            #if have 0 ticket we dont have block in out put
             else:
-                output = {'tickets': 'There are ' + str(len(tickets)) + ' Tickets', 'status': 'Failed'}
+                output = {'tickets': 'There are ' + str(len(tickets)) + ' Tickets', 'status': 'Failed', 'message': '0 ticket'}
                 self.write(output)
 
 class ticketStatus(BaseHandler):
     def post(self, *args, **kwargs):
         apiToken = self.get_argument('apiToken')
         id = self.get_argument('id')
-        user = self.db.get("SELECT * FROM users WHERE apitoken=%s", apiToken)
+        user = self.db.get("SELECT * FROM users WHERE apitoken = %s", apiToken)
 
         if not user:
             output = {'message': 'token is not available',
@@ -193,14 +215,15 @@ class ticketStatus(BaseHandler):
             return
 
         if ticket.userId != user.id:
-            output = {'message': 'permission denied', 'status': 'failed'}
+            output = {'message': 'permission denied, this ticket for another user', 'status': 'failed'}
             self.write(output)
             return
 
         self.db.execute("UPDATE ticket SET status= 'close' where id = %s",id)
-        output ={'status': 'OK', 'message' : 'change successfully'}
+        output = {'status': 'OK', 'message': 'change successfully'}
         self.write(output)
         return
+
 
 class ticketStatusAdmin(BaseHandler):
     def post(self, *args, **kwargs):
@@ -216,7 +239,7 @@ class ticketStatusAdmin(BaseHandler):
             return
 
         if user.role != 'admin':
-            output = {'message': 'user is not admin, permission denied','status': 'Failed'}
+            output = {'message': 'user is not admin, permission denied', 'status': 'Failed'}
             self.write(output)
             return
 
@@ -228,11 +251,11 @@ class ticketStatusAdmin(BaseHandler):
             return
 
         if statusUSER == "close":
-            self.db.execute("UPDATE ticket SET status = 'close'  where id = %s",id)
+            self.db.execute("UPDATE ticket SET status = 'close'  where id = %s", id)
         elif statusUSER == "open":
-            self.db.execute("UPDATE ticket SET status = 'open'  where id = %s",id)
+            self.db.execute("UPDATE ticket SET status = 'open'  where id = %s", id)
         elif statusUSER == "in progress":
-            self.db.execute("UPDATE ticket SET status = 'in progress'  where id = %s",id)
+            self.db.execute("UPDATE ticket SET status = 'in progress'  where id = %s", id)
 
         output = {'status': 'OK', 'message': 'change successfully'}
         self.write(output)
@@ -246,7 +269,7 @@ class response(BaseHandler):
         user = self.db.get("SELECT * FROM users WHERE apitoken = %s", apiToken)
 
         if not user:
-            output = {'message': 'token is not available , this user not dont have token',
+            output = {'message': 'token is not available , failed',
                    'status': 'Failed'}
             self.write(output)
             return
@@ -267,7 +290,7 @@ class response(BaseHandler):
         self.db.execute("UPDATE ticket SET status = %s  WHERE id = %s", 'close', id)
 
         output = {'message': 'Response to Ticket With id -' + str(id) + '- Sent Successfully',
-               'status': 'OK'}
+               'status': 'OK', 'ticket': ticket.body}
         self.write(output)
 
 

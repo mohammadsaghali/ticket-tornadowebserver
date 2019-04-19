@@ -63,18 +63,20 @@ while True:
                 CMD = "apicheck"
                 PARAMS = {'api':API}
                 r = requests.post(__postcr__(), params=PARAMS)
-                if str(r.json()['status']) == 'TRUE':
+
+                if str(r.json()['status']) == 'OK':
                     clear()
                     print("API IS CORRECT\nLogging You in ...")
                     USERNAME = str(r.json()['username'])
-                    time.sleep(2)
+                    print('Press Any Key To Continue ...')
+                    x = sys.stdin.readline()[:-1]
                     break
                 else:
                     clear()
                     print("API IS INCORRECT\nTRY AGAIN ...")
-                    time.sleep(2)
+                    print('Press Any Key To Continue ...')
+                    x = sys.stdin.readline()[:-1]
 
-            # functions
 
             #functions
             while True:
@@ -94,11 +96,15 @@ while True:
                     r = requests.post(__postcr__(), PARAMS)
 
                     if str(r.json()['status']) == "OK":
-                        print("message ID : " + str(r.json()['id']) )
+                        print("message ID : " + str(r.json()['id']))
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
 
-                    print('Press Any Key To Continue ...')
-                    x = sys.stdin.readline()[:-1]
+                    else:
+                        print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
 
                 #get ticket
                 if func_type[:-1] == '2':
@@ -113,15 +119,18 @@ while True:
                         for i in range(0, index):
                             block = 'block ' + str(i)
                             print("message id : " + str(r.json()[block]['id']))
-                            print("status : "+ str(r.json()[block]['type']))
+                            print("status : " + str(r.json()[block]['type']))
                             print("subject : " + str(r.json()[block]['subject']))
                             print("message : " + str(r.json()[block]['body']))
                             print("response : " + str(r.json()[block]['response']) + "\n")
-
-                    #if dont have message
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
                     else:
-                        print(str(r.json()['tickets']))
+                        print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
 
+                #change status
                 if func_type[:-1] == '3':
                     clear()
                     CMD = "ticketStatus"
@@ -129,20 +138,27 @@ while True:
                     id = sys.stdin.readline()[:-1]
                     PARAMS = {"apiToken": API, 'id': id}
                     r = requests.post(__postcr__(), PARAMS)
+
                     if str(r.json()['status']) == "OK":
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
                     else:
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
+
+
+
+                #change status admin mode
                 if func_type[:-1] == '4':
                     clear()
                     CMD = "ticketStatusAdmin"
                     print("enter ticket ID : ")
                     id = sys.stdin.readline()[:-1]
+
                     while True:
-                        print("change status to this options:"
-                              "1.open"
-                              "2.close"
-                              "3.in progress")
+                        print("change status to this options:\n1.open\n2.close\n3.in progress\n")
                         state = sys.stdin.readline()[:-1]
                         if state == '1':
                             state = 'open'
@@ -155,13 +171,19 @@ while True:
                             break
                         else:
                             print("incorrect number try again")
-                    PARAMS = {"apiToken": API, 'id': id,'status' : state}
+                    PARAMS = {"apiToken": API, 'id': id, 'status': state}
                     r = requests.post(__postcr__(), PARAMS)
+
                     if str(r.json()['status']) == "OK":
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
                     else:
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
 
+                #responsing
                 if func_type[:-1] == '5':
                     clear()
                     CMD = "response"
@@ -171,10 +193,18 @@ while True:
                     body = sys.stdin.readline()[:-1]
                     PARAMS = {"apiToken": API, 'id': id, 'body': body}
                     r = requests.post(__postcr__(), PARAMS)
+
                     if str(r.json()['status']) == "OK":
                         print(str(r.json()['message']))
+                        print("message : " + str(r.json()['ticket']))
+                        print("response : " + body)
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
                     else:
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
+
 
                 if func_type[:-1] == '6':
                     break
@@ -185,6 +215,7 @@ while True:
         #login with user & pass
         elif login_type[:-1] == '2':
             clear()
+
             while True:
                 print("USERNAME : ")
                 USERNAME = sys.stdin.readline()[:-1]
@@ -193,24 +224,27 @@ while True:
                 CMD = "authcheck"
                 PARAMS = {'username': USERNAME, 'password': PASSWORD}
                 r = requests.post(__postcr__(), PARAMS)
-                if str(r.json()['status']) == 'TRUE':
+
+                if str(r.json()['status']) == 'OK':
                     clear()
                     print("USERNAME AND PASSWORD IS CORRECT\nLogging You in ...")
                     API = str(r.json()['api'])
-                    time.sleep(2)
+                    print('Press Any Key To Continue ...')
+                    x = sys.stdin.readline()[:-1]
                     break
                 else:
                     clear()
                     print("USERNAME AND PASSWORD IS INCORRECT\nTRY AGAIN ...")
-                    time.sleep(2)
+                    print('Press Any Key To Continue ...')
+                    x = sys.stdin.readline()[:-1]
 
-            #functions
+            # functions
             while True:
                 clear()
                 show_func()
                 func_type = sys.stdin.readline()
 
-                #sendticket
+                # sendticket
                 if func_type[:-1] == '1':
                     clear()
                     print("subject : ")
@@ -218,17 +252,21 @@ while True:
                     print("body : ")
                     body = sys.stdin.readline()[:-1]
                     CMD = "sendTicket"
-                    PARAMS = {'apiToken': API, 'subject': subject, 'body': body }
+                    PARAMS = {'apiToken': API, 'subject': subject, 'body': body}
                     r = requests.post(__postcr__(), PARAMS)
 
                     if str(r.json()['status']) == "OK":
-                        print("message ID : " + str(r.json()['id']) )
+                        print("message ID : " + str(r.json()['id']))
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
 
-                    print('Press Any Key To Continue ...')
-                    x = sys.stdin.readline()[:-1]
+                    else:
+                        print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
 
-                #get ticket
+                # get ticket
                 if func_type[:-1] == '2':
                     clear()
                     CMD = "getTicket"
@@ -241,15 +279,18 @@ while True:
                         for i in range(0, index):
                             block = 'block ' + str(i)
                             print("message id : " + str(r.json()[block]['id']))
-                            print("status : "+ str(r.json()[block]['type']))
+                            print("status : " + str(r.json()[block]['type']))
                             print("subject : " + str(r.json()[block]['subject']))
                             print("message : " + str(r.json()[block]['body']))
                             print("response : " + str(r.json()[block]['response']) + "\n")
-
-                    #if dont have message
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
                     else:
-                        print(str(r.json()['tickets']))
+                        print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
 
+                # change status
                 if func_type[:-1] == '3':
                     clear()
                     CMD = "ticketStatus"
@@ -257,20 +298,25 @@ while True:
                     id = sys.stdin.readline()[:-1]
                     PARAMS = {"apiToken": API, 'id': id}
                     r = requests.post(__postcr__(), PARAMS)
+
                     if str(r.json()['status']) == "OK":
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
                     else:
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
+
+                # change status admin mode
                 if func_type[:-1] == '4':
                     clear()
                     CMD = "ticketStatusAdmin"
                     print("enter ticket ID : ")
                     id = sys.stdin.readline()[:-1]
+
                     while True:
-                        print("change status to this options:"
-                              "1.open"
-                              "2.close"
-                              "3.in progress")
+                        print("change status to this options:\n1.open\n2.close\n3.in progress\n")
                         state = sys.stdin.readline()[:-1]
                         if state == '1':
                             state = 'open'
@@ -283,13 +329,19 @@ while True:
                             break
                         else:
                             print("incorrect number try again")
-                    PARAMS = {"apiToken": API, 'id': id,'status' : state}
+                    PARAMS = {"apiToken": API, 'id': id, 'status': state}
                     r = requests.post(__postcr__(), PARAMS)
+
                     if str(r.json()['status']) == "OK":
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
                     else:
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
 
+                # responsing
                 if func_type[:-1] == '5':
                     clear()
                     CMD = "response"
@@ -299,10 +351,17 @@ while True:
                     body = sys.stdin.readline()[:-1]
                     PARAMS = {"apiToken": API, 'id': id, 'body': body}
                     r = requests.post(__postcr__(), PARAMS)
+
                     if str(r.json()['status']) == "OK":
                         print(str(r.json()['message']))
+                        print("message : " + str(r.json()['ticket']))
+                        print("response : " + body)
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
                     else:
                         print(str(r.json()['message']))
+                        print('Press Any Key To Continue ...')
+                        x = sys.stdin.readline()[:-1]
 
                 if func_type[:-1] == '6':
                     break
@@ -311,8 +370,8 @@ while True:
 
         #signup
     elif status[:-1] == '2':
-
         clear()
+
         while True:
             print("To Create New Account Enter The Authentication")
             print("USERNAME : ")
@@ -325,7 +384,7 @@ while True:
             LASTNAME = sys.stdin.readline()[:-1]
 
             while True:
-                print("ROLE : "+ "\n1.admin\n2.user")
+                print("ROLE : " + "\n1.admin\n2.user")
                 temp = sys.stdin.readline()[:-1]
                 if temp == '1':
                     ROLE = 'admin'
@@ -340,15 +399,15 @@ while True:
             clear()
             PARAMS = {'username': USERNAME, 'password': PASSWORD, 'role': ROLE, 'firstname': FIRSTNAME, 'lastname': LASTNAME}
             r = requests.post(__postcr__(), PARAMS)
-            if str(r.json()['status']) == "OK":
-                print("Your Acount Is Created\n" + "Your Username :" + USERNAME + "\nYour API : " + str(r.json()['apitoken']))
 
+            if str(r.json()['status']) == "OK":
+                print(str(r.json()['message']))
+                print("Your Acount Is Created\n" + "Your Username :" + USERNAME + "\nYour API : " + str(r.json()['apitoken']))
                 print('Press Any Key To Continue ...')
                 x = sys.stdin.readline()[:-1]
                 break
             else:
-
-                print(str(r.json()['status']) + "\n" + "Try Again")
+                print(str(r.json()['message']) + "\n" + "Try Again")
                 print('Press Any Key To Continue ...')
                 x = sys.stdin.readline()[:-1]
                 clear()
